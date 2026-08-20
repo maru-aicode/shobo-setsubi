@@ -188,7 +188,8 @@
     flex:1; border:none; background:transparent; color: rgba(245,241,230,0.6); padding: 12px 4px 10px;
     font-size:11.5px; font-weight:600; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:3px;
   }
-  .bottom-nav button .mark{ font-family: var(--serif); font-size:17px; line-height:1; }
+  .bottom-nav button .mark{ display:flex; align-items:center; justify-content:center; width:22px; height:22px; }
+  .bottom-nav button .mark svg{ width:100%; height:100%; }
   .bottom-nav button.active{ color: var(--cream); }
   .bottom-nav button.active .mark{ color: var(--vermillion); }
 
@@ -336,10 +337,18 @@
 <nav class="index-rail" id="index-rail" aria-label="タグインデックス"></nav>
 
 <nav class="bottom-nav">
-  <button type="button" data-nav="home" class="active"><span class="mark">家</span>ホーム</button>
-  <button type="button" data-nav="search"><span class="mark">索</span>さがす</button>
-  <button type="button" data-nav="form" id="nav-add"><span class="mark">＋</span>登録</button>
-  <button type="button" data-nav="backup"><span class="mark">送</span>バックアップ</button>
+  <button type="button" data-nav="home" class="active">
+    <span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v9a1 1 0 0 0 1 1h3v-6h4v6h3a1 1 0 0 0 1-1v-9"/></svg></span>ホーム
+  </button>
+  <button type="button" data-nav="search">
+    <span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></span>さがす
+  </button>
+  <button type="button" data-nav="form" id="nav-add">
+    <span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></span>登録
+  </button>
+  <button type="button" data-nav="backup">
+    <span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/></svg></span>バックアップ
+  </button>
 </nav>
 
 <script>
