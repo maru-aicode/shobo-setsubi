@@ -241,7 +241,7 @@
 
     <div class="search-card">
       <input id="query" type="search" inputmode="search" autocomplete="off" autocapitalize="off"
-             placeholder="例：会議 / 遅刻 / 連絡" aria-label="検索語">
+             placeholder="例：圧力計 / サビ / 標識" aria-label="検索語">
       <div class="mode-toggle" role="group" aria-label="検索モード">
         <button type="button" id="mode-situ" aria-pressed="true">状況からさがす</button>
         <button type="button" id="mode-action" aria-pressed="false">対処・結果からさがす（逆引き）</button>
@@ -268,12 +268,12 @@
     <div class="form-card">
       <div class="field">
         <label for="f-situ">状況・場面</label>
-        <input id="f-situ" type="text" placeholder="例：会議に遅刻しそうな場合">
+        <input id="f-situ" type="text" placeholder="例：消火器の指示圧力計が赤枠まで下がっていた場合">
         <div class="hint">「〜の場合」「〜な時」の形で書くと一覧で読みやすくなります。</div>
       </div>
       <div class="field">
         <label for="f-action">対処・すべきこと</label>
-        <textarea id="f-action" rows="3" placeholder="例：チャットで一言、遅れる旨と到着目安を先に送る"></textarea>
+        <textarea id="f-action" rows="3" placeholder="例：メーカー整備工場で再充填・パッキン交換を実施するか、新品へ更新する"></textarea>
       </div>
       <div class="field">
         <label for="f-detail">補足（任意）</label>
@@ -281,7 +281,7 @@
       </div>
       <div class="field">
         <label for="f-tags">タグ（任意・カンマ区切り）</label>
-        <input id="f-tags" type="text" placeholder="例：仕事, 連絡">
+        <input id="f-tags" type="text" placeholder="例：圧力・機能, 外形構造">
       </div>
       <div class="form-actions">
         <button type="button" class="btn-save" id="btn-save">保存する</button>
