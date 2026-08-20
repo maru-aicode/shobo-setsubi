@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>消防設備逆引きリファレンス</title>
+<meta name="description" content="状況から消防設備の対処法をさがす、オフライン対応の逆引きリファレンス">
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1F3A5C">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="消防設備逆引き">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/icon-192.png">
+
+<style>
+  :root{
+    --paper: #EFE8D8;
+    --ink: #2B2A28;
+    --ink-soft: #6b6459;
+    --indigo: #1F3A5C;
+    --indigo-deep: #142943;
+    --vermillion: #C1432A;
+    --cream: #F5F1E6;
+    --line: rgba(43,42,40,0.14);
+    --serif: "Yu Mincho","YuMincho","Hiragino Mincho ProN","HGS明朝E", serif;
+    --sans: "Yu Gothic","YuGothic","Hiragino Sans","Hiragino Kaku Gothic ProN", sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    min-height:100vh;
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior-y: contain;
+  }
+  body::before{
+    content:"";
+    position:fixed; inset:0;
+    background-image: radial-gradient(rgba(43,42,40,0.035) 1px, transparent 1px);
+    background-size: 3px 3px;
+    pointer-events:none;
+    z-index:0;
+  }
+  button{ font-family: inherit; }
+
+  .app{
+    position:relative;
+    z-index:1;
+    max-width: 640px;
+    margin: 0 auto;
+    padding: env(safe-area-inset-top,0) 18px 90px;
+  }
+  .app.has-rail{ padding-right: 54px; }
+
+  header{
+    padding: 22px 0 14px;
+    border-bottom: 2px solid var(--indigo);
+  }
+  header .eyebrow{ font-size: 12px; letter-spacing: 0.18em; color: var(--indigo); font-weight: 600; }
+  header h1{ font-family: var(--serif); font-size: 27px; margin: 4px 0 6px; letter-spacing: 0.06em; font-weight: 700; }
+  header p{ margin:0; font-size: 13px; color: var(--ink-soft); }
+
+  .view{ display:none; }
+  .view.active{ display:block; }
+
+  /* ===== 共通カード ===== */
+  .card{
+    background: var(--cream);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--indigo);
+    border-radius: 2px;
+    padding: 12px 14px;
+    animation: card-in 0.25s ease both;
+  }
+  @keyframes card-in{ from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:translateY(0);} }
+  .card .situ{ font-family: var(--serif); font-size: 17px; font-weight:700; line-height:1.5; }
+  .card .situ .lead{ color: var(--vermillion); }
+  .card .action{ font-size: 13.5px; line-height:1.6; margin-top:4px; color: var(--ink); }
+  .card .detail{
+    font-size: 12px; line-height:1.7; margin-top:8px; padding-top:8px;
+    border-top: 1px dashed var(--line); color: var(--ink-soft); white-space: normal;
+  }
+  .card .detail-label{
+    display:inline-block; font-size:10.5px; font-weight:700; color: var(--indigo);
+    background: rgba(31,58,92,0.08); border-radius:3px; padding:1px 6px; margin-right:6px;
+    vertical-align: 1px;
+  }
+  .card .meta{ display:flex; gap:8px; align-items:center; margin-top:8px; font-size:11px; color: var(--ink-soft); flex-wrap:wrap; }
+  .card .tag{ background: rgba(31,58,92,0.1); color: var(--indigo); padding:2px 7px; border-radius: 10px; font-weight:600; }
+  .card .count-badge{ background: var(--vermillion); color:var(--cream); border-radius:10px; padding:1px 8px; font-weight:700; }
+
+  .rank-num{
+    font-family: var(--serif); font-weight:700; font-size:18px; color: var(--vermillion);
+    width: 22px; flex-shrink:0;
+  }
+  .row-flex{ display:flex; gap:10px; align-items:flex-start; }
+
+  section.block{ margin-top: 20px; }
+  section.block h2{
+    font-family: var(--serif); font-size: 16px; margin: 0 0 10px; padding-bottom:6px;
+    border-bottom: 1px dashed var(--line); display:flex; justify-content:space-between; align-items:baseline;
+  }
+  section.block h2 .sub{ font-size:11px; color: var(--ink-soft); font-family: var(--sans); font-weight:500; }
+  .stack{ display:flex; flex-direction:column; gap:9px; }
+  .empty-note{ font-size:13px; color: var(--ink-soft); padding: 14px 4px; line-height:1.7; }
+
+  /* ===== ホーム ===== */
+  .home-cta{
+    margin-top:18px; display:flex; gap:10px;
+  }
+  .home-cta button{
+    flex:1; padding:12px; border-radius:3px; border:1px solid var(--indigo); background:transparent;
+    color:var(--indigo); font-weight:700; font-size:13px; cursor:pointer;
+  }
+  .home-cta button.primary{ background:var(--indigo); color:var(--cream); }
+
+  /* ===== 検索画面 ===== */
+  .search-card{
+    margin-top: 16px; background: var(--cream); border: 1px solid var(--line); border-radius: 4px;
+    padding: 16px; position: relative;
+  }
+  .search-card::after{
+    content:"索"; position:absolute; top:-10px; right:-10px; width:34px; height:34px; border-radius:50%;
+    background: var(--vermillion); color: var(--cream); font-family: var(--serif); font-size: 15px;
+    display:flex; align-items:center; justify-content:center; transform: rotate(-8deg);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  }
+  input[type="search"], input[type="text"], textarea{
+    width:100%; font-family: var(--serif); font-size: 17px; padding: 9px 4px; border: none;
+    border-bottom: 2px solid var(--indigo); background: transparent; color: var(--ink); outline:none;
+  }
+  input[type="search"]:focus, input[type="text"]:focus, textarea:focus{ border-bottom-color: var(--vermillion); }
+  .mode-toggle{ display:flex; margin-top: 12px; border: 1px solid var(--indigo); border-radius: 3px; overflow:hidden; }
+  .mode-toggle button{
+    flex:1; padding: 9px 6px; border:none; background: transparent; color: var(--indigo);
+    font-size: 12.5px; font-weight:600; cursor:pointer;
+  }
+  .mode-toggle button + button{ border-left: 1px solid var(--indigo); }
+  .mode-toggle button[aria-pressed="true"]{ background: var(--indigo); color: var(--cream); }
+  .mode-hint{ margin: 10px 2px 0; font-size: 12px; color: var(--ink-soft); }
+  .status-row{ margin: 14px 2px 8px; font-size: 12px; color: var(--ink-soft); display:flex; justify-content:space-between; }
+  .status-row .active-filter{ color: var(--vermillion); font-weight:600; }
+
+  .index-rail{
+    position: fixed; top:0; right:0; bottom:0; width: 40px; display:none; flex-direction:column;
+    justify-content:center; gap: 6px; z-index: 5; padding: 8px 4px; overflow-y:auto;
+  }
+  .index-rail button{
+    all: unset; cursor:pointer; display:flex; align-items:center; justify-content:center; min-height: 30px;
+    border-radius: 3px 0 0 3px; background: rgba(31,58,92,0.14); color: var(--indigo); font-size: 11px;
+    font-weight:700; width: 30px; margin-left:auto; padding: 4px 2px; writing-mode: vertical-rl; text-orientation:upright;
+    letter-spacing:1px;
+  }
+  .index-rail button[aria-pressed="true"]{ background: var(--vermillion); color: var(--cream); width:36px; }
+
+  /* ===== 登録/編集フォーム ===== */
+  .form-card{ margin-top: 16px; background: var(--cream); border: 1px solid var(--line); border-radius: 4px; padding: 16px; }
+  .field{ margin-bottom: 16px; }
+  .field label{ display:block; font-size:12px; color: var(--ink-soft); margin-bottom:4px; font-weight:600; }
+  .hint{ font-size:12px; color: var(--ink-soft); line-height:1.6; margin-top:3px; }
+  textarea{ resize: vertical; min-height: 56px; font-size:14px; font-family: var(--sans); }
+  .form-actions{ display:flex; gap:10px; margin-top: 4px; }
+  .form-actions button{ flex:1; padding:12px; border-radius:3px; font-weight:700; font-size:14px; cursor:pointer; border:1px solid var(--indigo); }
+  .btn-save{ background: var(--indigo); color: var(--cream); }
+  .btn-cancel{ background: transparent; color: var(--indigo); }
+  .btn-delete{
+    margin-top: 14px; width:100%; padding:11px; border-radius:3px; font-weight:700; font-size:13px;
+    background: transparent; color: var(--vermillion); border:1px solid var(--vermillion); cursor:pointer;
+  }
+
+  .card-actions{ display:flex; gap:8px; margin-top:8px; }
+  .card-actions button{
+    border:none; background:transparent; color: var(--indigo); font-size:12px; font-weight:700;
+    padding:4px 0; cursor:pointer; text-decoration:underline;
+  }
+
+  /* ===== ボトムナビ ===== */
+  .bottom-nav{
+    position:fixed; left:0; right:0; bottom:0; z-index:6;
+    background: var(--indigo); padding-bottom: env(safe-area-inset-bottom,0);
+    display:flex; box-shadow: 0 -2px 8px rgba(0,0,0,0.15);
+  }
+  .bottom-nav button{
+    flex:1; border:none; background:transparent; color: rgba(245,241,230,0.6); padding: 12px 4px 10px;
+    font-size:11.5px; font-weight:600; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:3px;
+  }
+  .bottom-nav button .mark{ font-family: var(--serif); font-size:17px; line-height:1; }
+  .bottom-nav button.active{ color: var(--cream); }
+  .bottom-nav button.active .mark{ color: var(--vermillion); }
+
+  .install-note{ margin-top: 26px; border-top: 1px dashed var(--line); padding-top: 14px; font-size: 12px; color: var(--ink-soft); line-height: 1.7; }
+  .install-note strong{ color: var(--ink); }
+
+  @media (max-width: 380px){ header h1{ font-size: 23px; } }
+  @media (prefers-reduced-motion: reduce){ .card{ animation:none; } }
+</style>
+</head>
+<body>
+
+<div class="app" id="app">
+
+  <!-- ===== ホーム ===== -->
+  <section class="view active" id="view-home">
+    <header>
+      <div class="eyebrow">SHOBO SETSUBI GYAKUBIKI</div>
+      <h1>消防設備逆引きリファレンス</h1>
+      <p>消防設備の「〇〇の場合はこうする」を、状況からさがす。</p>
+    </header>
+
+    <div class="home-cta">
+      <button type="button" class="primary" data-nav="search">状況からさがす</button>
+      <button type="button" data-nav="form" id="home-add-btn">＋ 新規登録</button>
+    </div>
+
+    <section class="block">
+      <h2>最近利用したユースケース <span class="sub">新しい順</span></h2>
+      <div class="stack" id="recent-list"></div>
+    </section>
+
+    <section class="block">
+      <h2>よく使うランキング <span class="sub">利用回数順</span></h2>
+      <div class="stack" id="ranking-list"></div>
+    </section>
+
+    <p class="install-note">
+      <strong>オフラインで使うには：</strong> Safariでこのページを開き、共有ボタン→「ホーム画面に追加」を選んでください。データは端末内に保存され、機内モードでも読み書きできます。
+    </p>
+  </section>
+
+  <!-- ===== さがす ===== -->
+  <section class="view" id="view-search">
+    <header>
+      <div class="eyebrow">SEARCH</div>
+      <h1>さがす</h1>
+      <p>状況、対処、タグのどこからでもさがせます。</p>
+    </header>
+
+    <div class="search-card">
+      <input id="query" type="search" inputmode="search" autocomplete="off" autocapitalize="off"
+             placeholder="例：会議 / 遅刻 / 連絡" aria-label="検索語">
+      <div class="mode-toggle" role="group" aria-label="検索モード">
+        <button type="button" id="mode-situ" aria-pressed="true">状況からさがす</button>
+        <button type="button" id="mode-action" aria-pressed="false">対処・結果からさがす（逆引き）</button>
+      </div>
+      <p class="mode-hint" id="mode-hint">「どんな時か」を中心にさがします。</p>
+    </div>
+
+    <div class="status-row">
+      <span id="count-text">全 0 件</span>
+      <span id="filter-text" class="active-filter"></span>
+    </div>
+
+    <div class="stack" id="search-results"></div>
+  </section>
+
+  <!-- ===== 登録/編集 ===== -->
+  <section class="view" id="view-form">
+    <header>
+      <div class="eyebrow" id="form-eyebrow">NEW ENTRY</div>
+      <h1 id="form-title">新規登録</h1>
+      <p>状況と対処を、短く具体的に書きます。</p>
+    </header>
+
+    <div class="form-card">
+      <div class="field">
+        <label for="f-situ">状況・場面</label>
+        <input id="f-situ" type="text" placeholder="例：会議に遅刻しそうな場合">
+        <div class="hint">「〜の場合」「〜な時」の形で書くと一覧で読みやすくなります。</div>
+      </div>
+      <div class="field">
+        <label for="f-action">対処・すべきこと</label>
+        <textarea id="f-action" rows="3" placeholder="例：チャットで一言、遅れる旨と到着目安を先に送る"></textarea>
+      </div>
+      <div class="field">
+        <label for="f-detail">補足（任意）</label>
+        <textarea id="f-detail" rows="2" placeholder="背景や注意点など"></textarea>
+      </div>
+      <div class="field">
+        <label for="f-tags">タグ（任意・カンマ区切り）</label>
+        <input id="f-tags" type="text" placeholder="例：仕事, 連絡">
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn-save" id="btn-save">保存する</button>
+        <button type="button" class="btn-cancel" id="btn-cancel">やめる</button>
+      </div>
+      <button type="button" class="btn-delete" id="btn-delete" style="display:none;">この項目を削除する</button>
+    </div>
+  </section>
+
+  <!-- ===== バックアップ ===== -->
+  <section class="view" id="view-backup">
+    <header>
+      <div class="eyebrow">BACKUP</div>
+      <h1>バックアップ</h1>
+      <p>データの書き出し・読み込みを行います。</p>
+    </header>
+
+    <section class="block">
+      <h2>エクスポート</h2>
+      <div class="form-card">
+        <p class="hint" style="margin:0 0 12px;">全 <strong id="export-count">0</strong> 件のユースケースを1つのファイルに書き出します。共有画面から「Google Driveに保存」や「メール」を選べます。</p>
+        <div class="form-actions">
+          <button type="button" class="btn-save" id="btn-export" style="flex:1;">書き出す（共有 / 保存）</button>
+        </div>
+        <p class="hint" id="export-fallback-note" style="display:none; margin-top:10px;">この端末では共有シートが使えないため、ファイルとしてダウンロードします。ダウンロード後、Google Driveアプリの「アップロード」やメールの添付からお使いください。</p>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2>インポート</h2>
+      <div class="form-card">
+        <p class="hint" style="margin:0 0 12px;">書き出したJSONファイルを選ぶと内容を確認できます。Google Driveアプリからもファイルを選べます。</p>
+        <input type="file" id="import-file" accept="application/json,.json" style="display:none;">
+        <div class="form-actions">
+          <button type="button" class="btn-cancel" id="btn-import-pick" style="flex:1;">ファイルを選ぶ</button>
+        </div>
+        <div id="import-preview" style="display:none; margin-top:14px;">
+          <p class="hint" id="import-preview-text" style="margin:0 0 10px;"></p>
+          <div class="form-actions">
+            <button type="button" class="btn-save" id="btn-import-merge" style="flex:1;">追加する</button>
+            <button type="button" class="btn-cancel" id="btn-import-replace" style="flex:1;">全部を置き換える</button>
+          </div>
+          <button type="button" class="btn-cancel" id="btn-import-cancel" style="margin-top:10px; width:100%; padding:10px;">やめる</button>
+        </div>
+        <p class="hint" id="import-error" style="display:none; color: var(--vermillion); margin-top:10px;"></p>
+      </div>
+    </section>
+  </section>
+
+</div>
+
+<nav class="index-rail" id="index-rail" aria-label="タグインデックス"></nav>
+
+<nav class="bottom-nav">
+  <button type="button" data-nav="home" class="active"><span class="mark">家</span>ホーム</button>
+  <button type="button" data-nav="search"><span class="mark">索</span>さがす</button>
+  <button type="button" data-nav="form" id="nav-add"><span class="mark">＋</span>登録</button>
+  <button type="button" data-nav="backup"><span class="mark">送</span>バックアップ</button>
+</nav>
+
+<script>
+(function(){
+  const STORAGE_KEY = 'gyakubiki-reference-v2';
+
+  const SEED = [
+    { situation:"消火器前面への荷物・陳列品放置", action:"障害物を即座に除去。床面に消火器設置用の明示ラインを区画標示する。", detail:"機能的リスク・原因：レイアウト変更や荷物の一時置き。火災時に即座に取り出せない。\n運用・法的留意点：防火管理者による日常巡回点検の指導徹底。", tags:["設置・環境"] },
+    { situation:"設置高さの基準超過（床面から1.5m超）", action:"取付フックの位置を下げ、床面から1.5m以下の高さへ移設調整する。", detail:"機能的リスク・原因：取付金具の高所設置。小柄な人や車椅子利用者が届かない。\n運用・法的留意点：壁面固定時の下地補強と耐震固定を同時に確認。", tags:["設置・環境"] },
+    { situation:"消火器標識の未設置・退色・陰隠", action:"規定寸法（24cm×8cm以上）の赤地白文字標識を視認しやすい位置へ貼付・新設する。", detail:"機能的リスク・原因：日光による紫外線劣化、改装時の取り外し放置。\n運用・法的留意点：高所や物陰にならない位置へ設置する。", tags:["標識・表示"] },
+    { situation:"旧規格消火器（文字表記のみ）の設置", action:"新規格適合消火器（ピクトグラム絵表示付き）へ全数更新する。", detail:"機能的リスク・原因：2021年12月31日の型式失効期限経過後の交換漏れ。\n運用・法的留意点：法的に未設置扱いとなるため至急対応が必要。", tags:["標識・表示"] },
+    { situation:"本体容器底部の著しいサビ・腐食・打痕", action:"対象消火器を使用停止・回収し、新品へ交換。設置架台や格納箱を新設する。", detail:"機能的リスク・原因：床面への直置き、雨水・薬品曝露による腐食。\n運用・法的留意点：容器破裂事故の危険性が高いため圧力を抜かず慎重に搬出。", tags:["外形構造"] },
+    { situation:"安全栓の封（封シール）の切れ・欠落", action:"未使用であることを重量・指示圧力で確認後、封印シールを再装着（又は機器更新）。", detail:"機能的リスク・原因：掃除時等の接触やいたずらによる破損。\n運用・法的留意点：履歴不明時は内部点検を実施し薬剤量を確認。", tags:["外形構造"] },
+    { situation:"安全栓の曲がり・変形・固着", action:"安全栓部品の交換、または消火器本体の交換を行う。", detail:"機能的リスク・原因：外部からの衝撃。有事の際に安全栓が抜けない。\n運用・法的留意点：変形負荷でレバー内部が歪んでいないか確認。", tags:["外形構造"] },
+    { situation:"蓄圧式消火器の指示圧力計低下（赤枠）", action:"メーカー整備工場で再充填・パッキン交換を実施するか、新品へ更新する。", detail:"機能的リスク・原因：バルブパッキン劣化やネジ緩みによる内圧ガス漏洩。\n運用・法的留意点：圧力が下がった状態では薬剤が噴出しない。", tags:["圧力・機能"] },
+    { situation:"蓄圧式消火器の指示圧力計過圧（高圧力）", action:"直射日光の当たらない適正温度範囲の冷暗所へ移設し、圧力を再確認する。", detail:"機能的リスク・原因：直射日光やボイラー付近等の高温暴露による内圧上昇。\n運用・法的留意点：移設後も圧力が下がらない場合は圧力計故障として交換。", tags:["圧力・機能"] },
+    { situation:"ホースのひび割れ・亀裂・ノズル塞がり", action:"ホースアセンブリの部品交換、またはノズル清掃・エアーブローを実施する。", detail:"機能的リスク・原因：経年劣化、噴出口へのゴミや昆虫の巣詰まり。\n運用・法的留意点：放射圧によるホース破裂を防止する。", tags:["構成部品"] },
+    { situation:"粉末消火薬剤の著しいケーキング（固化）", action:"薬剤の詰替え・乾燥清掃、または消火器本体の買替え更新を行う。", detail:"機能的リスク・原因：長期振動、湿気侵入による粉末の塊化。\n運用・法的留意点：サイホン管の詰まりによる放射不能を防ぐ。", tags:["内部・機能"] },
+    { situation:"加圧用ガス容器（ボンベ）の質量減少", action:"新品の加圧用ガス容器へ交換する。", detail:"機能的リスク・原因：封止板の微小クラックによる炭酸ガス抜け。\n運用・法的留意点：ガス抜け状態ではレバーを操作しても作動しない。", tags:["内部・機能"] },
+    { situation:"製造後10年経過消火器の未点検（耐圧未実施）", action:"水圧試験を実施するか、費用対効果を考慮し新規格品へ全数交換する。", detail:"機能的リスク・原因：法定10年期限の徒過による点検義務違反。\n運用・法的留意点：10年経過品は3年ごとの耐圧試験が永続義務化される。", tags:["耐圧・年数"] },
+    { situation:"不備事項の放置および改修計画書の未提出", action:"「消防用設備等点検報告改修計画書」を作成し、改修予定日を添えて消防署へ提出する。", detail:"機能的リスク・原因：点検報告後に改修工事を未立案のまま放置。\n運用・法的留意点：消防署からの是正指導・立入検査への早期対応。", tags:["行政手続"] }
+  ];
+
+  function uid(){ return 'uc_' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+  function loadData(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(raw){ return JSON.parse(raw); }
+    }catch(e){}
+    const now = Date.now();
+    const seeded = SEED.map((s,i) => ({
+      id: uid(), situation:s.situation, action:s.action, detail:s.detail||'', tags:s.tags||[],
+      createdAt: now - (SEED.length-i)*1000, updatedAt: now, usageCount:0, lastUsedAt:null
+    }));
+    saveData(seeded);
+    return seeded;
+  }
+  function saveData(data){
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }catch(e){}
+  }
+
+  let DATA = loadData();
+  let mode = 'situ'; // 'situ' | 'action'
+  let tagFilter = null;
+  let editingId = null;
+
+  const $ = (sel) => document.querySelector(sel);
+  const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+
+  function escapeHtml(s){
+    return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  function relTime(ts){
+    if(!ts) return '';
+    const diff = Date.now() - ts;
+    const m = 60*1000, h = 60*m, d = 24*h;
+    if(diff < m) return 'たった今';
+    if(diff < h) return Math.floor(diff/m) + '分前';
+    if(diff < d) return Math.floor(diff/h) + '時間前';
+    if(diff < 30*d) return Math.floor(diff/d) + '日前';
+    const dt = new Date(ts);
+    return `${dt.getFullYear()}/${dt.getMonth()+1}/${dt.getDate()}`;
+  }
+
+  function summaryLine(item){
+    const situ = item.situation || '（無題）';
+    const endsWithBa = /(場合|とき|時)$/.test(situ.trim());
+    return `${situ}${endsWithBa ? 'は' : 'の場合は'}` ;
+  }
+
+  function cardHtml(item, opts){
+    opts = opts || {};
+    const tagsHtml = (item.tags||[]).map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('');
+    const rank = opts.rank ? `<div class="rank-num">${opts.rank}</div>` : '';
+    const countBadge = (item.usageCount>0) ? `<span class="count-badge">${item.usageCount}回利用</span>` : '';
+    const lastUsed = item.lastUsedAt ? `<span>${relTime(item.lastUsedAt)}</span>` : '';
+    const detailHtml = (item.detail && item.detail.trim())
+      ? `<div class="detail"><span class="detail-label">補足</span>${escapeHtml(item.detail).replace(/\n/g,'<br>')}</div>`
+      : '';
+    return `
+      <div class="row-flex">
+        ${rank}
+        <div class="card" style="flex:1;" data-id="${item.id}">
+          <div class="situ"><span class="lead">${escapeHtml(summaryLine(item))}</span></div>
+          <div class="action">${escapeHtml(item.action || '')}</div>
+          ${detailHtml}
+          <div class="meta">${tagsHtml}${countBadge}${lastUsed}</div>
+          <div class="card-actions">
+            <button type="button" class="act-use" data-id="${item.id}">これを使う</button>
+            <button type="button" class="act-edit" data-id="${item.id}">編集</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function bindCardActions(container){
+    container.querySelectorAll('.act-use').forEach(btn => {
+      btn.addEventListener('click', () => { recordUsage(btn.dataset.id); renderAll(); });
+    });
+    container.querySelectorAll('.act-edit').forEach(btn => {
+      btn.addEventListener('click', () => openForm(btn.dataset.id));
+    });
+  }
+
+  function recordUsage(id){
+    const item = DATA.find(d => d.id === id);
+    if(!item) return;
+    item.usageCount = (item.usageCount||0) + 1;
+    item.lastUsedAt = Date.now();
+    saveData(DATA);
+  }
+
+  /* ---------- ホーム ---------- */
+  function renderHome(){
+    const recent = DATA.filter(d => d.lastUsedAt).sort((a,b) => b.lastUsedAt - a.lastUsedAt).slice(0,5);
+    const ranking = DATA.filter(d => d.usageCount>0).sort((a,b) => b.usageCount - a.usageCount).slice(0,5);
+
+    const recentEl = $('#recent-list');
+    recentEl.innerHTML = recent.length
+      ? recent.map(item => cardHtml(item)).join('')
+      : `<p class="empty-note">まだ利用履歴がありません。「さがす」でユースケースを開くと、ここに表示されます。</p>`;
+    bindCardActions(recentEl);
+
+    const rankEl = $('#ranking-list');
+    rankEl.innerHTML = ranking.length
+      ? ranking.map((item,i) => cardHtml(item, {rank:i+1})).join('')
+      : `<p class="empty-note">まだ利用回数がありません。</p>`;
+    bindCardActions(rankEl);
+  }
+
+  /* ---------- さがす ---------- */
+  function matches(item, q){
+    if(!q) return true;
+    if(mode === 'action'){
+      return item.action.includes(q) || item.detail.includes(q);
+    }
+    return item.situation.includes(q) || (item.tags||[]).some(t => t.includes(q)) || item.detail.includes(q);
+  }
+
+  function renderSearch(){
+    const q = $('#query').value.trim();
+    let filtered = DATA.filter(item => matches(item, q));
+    if(tagFilter){ filtered = filtered.filter(item => (item.tags||[]).includes(tagFilter)); }
+    filtered = filtered.slice().sort((a,b) => (b.updatedAt||0) - (a.updatedAt||0));
+
+    $('#count-text').textContent = `全 ${DATA.length} 件中 ${filtered.length} 件`;
+    $('#filter-text').textContent = tagFilter ? `「${tagFilter}」で絞り込み中` : '';
+
+    const resEl = $('#search-results');
+    if(filtered.length === 0){
+      resEl.innerHTML = `<p class="empty-note">見当たりません。別のキーワードや絞り込みをお試しください。</p>`;
+    } else {
+      resEl.innerHTML = filtered.map(item => cardHtml(item)).join('');
+    }
+    bindCardActions(resEl);
+    renderRail(q);
+  }
+
+  function renderRail(q){
+    const base = DATA.filter(item => matches(item, q));
+    const counts = {};
+    base.forEach(item => (item.tags||[]).forEach(t => { counts[t] = (counts[t]||0)+1; }));
+    const tags = Object.keys(counts).sort((a,b) => counts[b]-counts[a]);
+    const rail = $('#index-rail');
+    if(tags.length === 0){ rail.innerHTML = ''; return; }
+    rail.innerHTML = tags.map(t => {
+      const pressed = tagFilter === t;
+      return `<button type="button" data-tag="${escapeHtml(t)}" aria-pressed="${pressed}" title="${escapeHtml(t)} ${counts[t]}件">${escapeHtml(t)}</button>`;
+    }).join('');
+    rail.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const t = btn.getAttribute('data-tag');
+        tagFilter = (tagFilter === t) ? null : t;
+        renderSearch();
+      });
+    });
+  }
+
+  function setMode(next){
+    mode = next;
+    $('#mode-situ').setAttribute('aria-pressed', String(mode==='situ'));
+    $('#mode-action').setAttribute('aria-pressed', String(mode==='action'));
+    $('#mode-hint').textContent = mode === 'action'
+      ? '対処・結果の文章の中からさがします（逆引き）。'
+      : '「どんな時か」を中心にさがします。';
+    renderSearch();
+  }
+
+  /* ---------- 登録/編集フォーム ---------- */
+  function openForm(id){
+    editingId = id || null;
+    const item = editingId ? DATA.find(d => d.id === editingId) : null;
+    $('#form-title').textContent = item ? '編集する' : '新規登録';
+    $('#form-eyebrow').textContent = item ? 'EDIT ENTRY' : 'NEW ENTRY';
+    $('#f-situ').value = item ? item.situation : '';
+    $('#f-action').value = item ? item.action : '';
+    $('#f-detail').value = item ? item.detail : '';
+    $('#f-tags').value = item ? (item.tags||[]).join(', ') : '';
+    $('#btn-delete').style.display = item ? 'block' : 'none';
+    goTo('form');
+  }
+
+  function submitForm(){
+    const situation = $('#f-situ').value.trim();
+    const action = $('#f-action').value.trim();
+    const detail = $('#f-detail').value.trim();
+    const tags = $('#f-tags').value.split(/[,、]/).map(t => t.trim()).filter(Boolean);
+
+    if(!situation || !action){
+      alert('「状況・場面」と「対処・すべきこと」は必須です。');
+      return;
+    }
+
+    const now = Date.now();
+    if(editingId){
+      const item = DATA.find(d => d.id === editingId);
+      Object.assign(item, { situation, action, detail, tags, updatedAt: now });
+    } else {
+      DATA.push({ id: uid(), situation, action, detail, tags, createdAt: now, updatedAt: now, usageCount:0, lastUsedAt:null });
+    }
+    saveData(DATA);
+    editingId = null;
+    goTo('search');
+    renderAll();
+  }
+
+  function deleteEditing(){
+    if(!editingId) return;
+    if(!confirm('この項目を削除します。よろしいですか？')) return;
+    DATA = DATA.filter(d => d.id !== editingId);
+    saveData(DATA);
+    editingId = null;
+    goTo('search');
+    renderAll();
+  }
+
+  /* ---------- ナビゲーション ---------- */
+  function goTo(view){
+    $$('.view').forEach(v => v.classList.remove('active'));
+    $('#view-' + view).classList.add('active');
+    $('#app').classList.toggle('has-rail', view === 'search');
+    $('#index-rail').style.display = (view === 'search') ? 'flex' : 'none';
+    $$('.bottom-nav button').forEach(b => b.classList.toggle('active', b.dataset.nav === view));
+    if(view === 'form' && editingId === null){
+      $('#form-title').textContent = '新規登録';
+      $('#form-eyebrow').textContent = 'NEW ENTRY';
+      $('#f-situ').value=''; $('#f-action').value=''; $('#f-detail').value=''; $('#f-tags').value='';
+      $('#btn-delete').style.display = 'none';
+    }
+    window.scrollTo(0,0);
+  }
+
+  function renderAll(){ renderHome(); renderSearch(); renderBackupCount(); }
+
+  function renderBackupCount(){
+    const el = $('#export-count');
+    if(el) el.textContent = DATA.length;
+  }
+
+  /* ---------- エクスポート ---------- */
+  function buildExportPayload(){
+    return {
+      app: 'gyakubiki-reference',
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      items: DATA
+    };
+  }
+
+  async function exportData(){
+    const payload = buildExportPayload();
+    const json = JSON.stringify(payload, null, 2);
+    const filename = `gyakubiki-reference-${new Date().toISOString().slice(0,10)}.json`;
+    const blob = new Blob([json], { type: 'application/json' });
+    const file = new File([blob], filename, { type: 'application/json' });
+
+    if(navigator.canShare && navigator.canShare({ files: [file] })){
+      try{
+        await navigator.share({
+          files: [file],
+          title: '消防設備逆引きリファレンス バックアップ',
+          text: `消防設備逆引きリファレンスのデータ（${DATA.length}件）`
+        });
+        return;
+      }catch(e){
+        // ユーザーがキャンセルした場合などはここに来る。ダウンロードにフォールバックしない。
+        if(e && e.name === 'AbortError') return;
+      }
+    }
+    // フォールバック：ダウンロード
+    $('#export-fallback-note').style.display = 'block';
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+  }
+
+  /* ---------- インポート ---------- */
+  let pendingImportItems = null;
+
+  function normalizeImportedItems(raw){
+    let items = Array.isArray(raw) ? raw : (raw && Array.isArray(raw.items) ? raw.items : null);
+    if(!items) return null;
+    const now = Date.now();
+    return items
+      .filter(it => it && typeof it === 'object' && (it.situation || it.action))
+      .map(it => ({
+        id: (typeof it.id === 'string' && it.id) ? it.id : uid(),
+        situation: String(it.situation || ''),
+        action: String(it.action || ''),
+        detail: String(it.detail || ''),
+        tags: Array.isArray(it.tags) ? it.tags.map(String) : [],
+        createdAt: Number.isFinite(it.createdAt) ? it.createdAt : now,
+        updatedAt: Number.isFinite(it.updatedAt) ? it.updatedAt : now,
+        usageCount: Number.isFinite(it.usageCount) ? it.usageCount : 0,
+        lastUsedAt: Number.isFinite(it.lastUsedAt) ? it.lastUsedAt : null
+      }));
+  }
+
+  function handleImportFile(file){
+    $('#import-error').style.display = 'none';
+    $('#import-preview').style.display = 'none';
+    pendingImportItems = null;
+
+    file.text().then(text => {
+      let raw;
+      try{ raw = JSON.parse(text); }
+      catch(e){ showImportError('ファイルの形式が正しくありません（JSONとして読み込めませんでした）。'); return; }
+
+      const items = normalizeImportedItems(raw);
+      if(!items || items.length === 0){ showImportError('ユースケースのデータが見つかりませんでした。'); return; }
+
+      pendingImportItems = items;
+      $('#import-preview-text').textContent = `${items.length} 件のユースケースが見つかりました。「追加する」で今のデータに合流、「全部を置き換える」で今のデータと入れ替えます。`;
+      $('#import-preview').style.display = 'block';
+    }).catch(() => showImportError('ファイルを読み込めませんでした。'));
+  }
+
+  function showImportError(msg){
+    $('#import-error').textContent = msg;
+    $('#import-error').style.display = 'block';
+  }
+
+  function applyImportMerge(){
+    if(!pendingImportItems) return;
+    const withNewIds = pendingImportItems.map(it => ({ ...it, id: uid() }));
+    DATA = DATA.concat(withNewIds);
+    saveData(DATA);
+    finishImport(`${withNewIds.length} 件を追加しました。`);
+  }
+
+  function applyImportReplace(){
+    if(!pendingImportItems) return;
+    if(!confirm('現在のデータをすべて削除し、インポートした内容に置き換えます。よろしいですか？')) return;
+    DATA = pendingImportItems.slice();
+    saveData(DATA);
+    finishImport(`${DATA.length} 件に置き換えました。`);
+  }
+
+  function finishImport(message){
+    pendingImportItems = null;
+    $('#import-preview').style.display = 'none';
+    $('#import-file').value = '';
+    renderAll();
+    alert(message);
+    goTo('home');
+  }
+
+  $$('[data-nav]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if(btn.id === 'nav-add' || btn.id === 'home-add-btn'){ editingId = null; }
+      goTo(btn.dataset.nav);
+    });
+  });
+  $('#mode-situ').addEventListener('click', () => setMode('situ'));
+  $('#mode-action').addEventListener('click', () => setMode('action'));
+  $('#query').addEventListener('input', renderSearch);
+  $('#btn-save').addEventListener('click', submitForm);
+  $('#btn-cancel').addEventListener('click', () => { editingId = null; goTo('search'); });
+  $('#btn-delete').addEventListener('click', deleteEditing);
+
+  $('#btn-export').addEventListener('click', exportData);
+  $('#btn-import-pick').addEventListener('click', () => $('#import-file').click());
+  $('#import-file').addEventListener('change', (e) => {
+    const file = e.target.files && e.target.files[0];
+    if(file) handleImportFile(file);
+  });
+  $('#btn-import-merge').addEventListener('click', applyImportMerge);
+  $('#btn-import-replace').addEventListener('click', applyImportReplace);
+  $('#btn-import-cancel').addEventListener('click', () => {
+    pendingImportItems = null;
+    $('#import-preview').style.display = 'none';
+    $('#import-file').value = '';
+  });
+
+  renderAll();
+
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    });
+  }
+})();
+</script>
+</body>
+</html>
